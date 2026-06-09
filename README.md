@@ -1,93 +1,604 @@
-# pemfc_prognostics
+# EIS-Calibrated Deep Temporal Prognostics for PEM Fuel Cell Degradation and Remaining Useful Life Prediction
 
+<p align="center">
+  <b>Machine learning and deep temporal modelling pipeline for PEM fuel cell degradation, State of Health estimation, and Remaining Useful Life prediction.</b>
+</p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue" />
+  <img src="https://img.shields.io/badge/Status-In%20Development-orange" />
+  <img src="https://img.shields.io/badge/Dataset-IEEE%20PHM%202014-green" />
+  <img src="https://img.shields.io/badge/Task-SoH%20%7C%20RUL-purple" />
+</p>
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Overview
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+This repository develops a complete prognostics pipeline for **Proton Exchange Membrane Fuel Cell degradation analysis**.
 
-## Add your files
+The project uses the **IEEE PHM 2014 Fuel Cell Data Challenge dataset**, which contains ageing monitoring data, polarization curves, and Electrochemical Impedance Spectroscopy data from PEM fuel cell durability tests.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+The goal is to use these data sources to estimate fuel cell health and predict degradation progression.
 
+Main prediction targets:
+
+* State of Health
+* Remaining Useful Life
+* future voltage degradation
+* power loss
+* EIS-based internal health indicators
+* uncertainty-aware future degradation trajectories
+
+---
+
+## Why This Project Uses EIS, Time-Series, and Polarization Data
+
+PEM fuel cell degradation is not fully visible from a single signal.
+
+| Data Type           | What it Represents                                                | Why it is Useful                                          |
+| ------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| Ageing time-series  | Voltage, current, temperature, pressure, flow, humidity over time | Shows long-term operating behaviour and degradation trend |
+| Polarization curves | Voltage and power behaviour over current density                  | Provides performance loss and power-based SoH targets     |
+| EIS data            | Real and imaginary impedance over frequency                       | Reveals internal electrochemical changes inside the stack |
+
+The key idea is to use EIS as a calibration signal for temporal degradation models.
+
+```mermaid
+flowchart LR
+    A[Ageing Time-Series] --> D[Feature Engineering]
+    B[Polarization Curves] --> D
+    C[EIS / Nyquist Data] --> D
+
+    D --> E[SoH and RUL Targets]
+
+    E --> F[Classical ML]
+    E --> G[Deep Temporal Models]
+    E --> H[EIS-Calibrated Fusion Model]
+    E --> I[Temporal Diffusion Model]
+
+    F --> J[Evaluation]
+    G --> J
+    H --> J
+    I --> J
 ```
-cd existing_repo
-git remote add origin https://git.rz.tu-bs.de/pankaj.rajoria/pemfc_prognostics.git
-git branch -M main
-git push -uf origin main
+
+---
+
+## Dataset
+
+The project is based on the **IEEE PHM 2014 Data Challenge** fuel cell dataset.
+
+Two fuel cell ageing experiments are used:
+
+| Dataset               | Operating Condition                         | Role             |
+| --------------------- | ------------------------------------------- | ---------------- |
+| `FC1_Without_Ripples` | Stationary current operation                | Learning dataset |
+| `FC2_With_Ripples`    | Dynamic current with high-frequency ripples | Testing dataset  |
+
+The fuel cell stacks are 5-cell PEMFC stacks. The nominal current density is 0.70 A/cm².
+
+The dataset contains three main file types:
+
+| File Type          | Example Information                                                                |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| Ageing files       | Time, cell voltages, stack voltage, current, temperature, pressure, flow, humidity |
+| Polarization files | Cell voltages, stack voltage, current, current density                             |
+| EIS files          | Frequency, real impedance, imaginary impedance                                     |
+
+---
+
+## Challenge Tasks
+
+The original challenge defines two main tasks.
+
+### 1. State of Health Estimation
+
+Predict EIS-based health characteristics for FC2 at future ageing times.
+
+The target is to estimate:
+
+```text
+ReZ and ImZ
 ```
 
-## Integrate with your tools
+at selected frequencies and future times.
 
-* [Set up project integrations](https://git.rz.tu-bs.de/pankaj.rajoria/pemfc_prognostics/-/settings/integrations)
+This project extends that idea by using EIS features as health indicators for machine learning and deep temporal models.
 
-## Collaborate with your team
+---
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### 2. Remaining Useful Life Prediction
 
-## Test and Deploy
+Predict the remaining time before a given power-loss threshold is reached.
 
-Use the built-in continuous integration in GitLab.
+RUL is estimated for these power-loss thresholds:
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+```text
+3.5%, 4.0%, 4.5%, 5.0%, 5.5%
+```
 
-***
+The RUL prediction point is:
 
-# Editing this README
+```text
+tpred = 550 h
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+---
 
-## Suggestions for a good README
+## Repository Structure
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```text
+pemfc_prognostics/
+│
+├── data/
+│   ├── raw/
+│   │   ├── FC1_Without_Ripples/
+│   │   └── FC2_With_Ripples/
+│   │
+│   ├── processed/
+│   │   ├── ageing/
+│   │   ├── eis/
+│   │   ├── polarization/
+│   │   └── features/
+│   │
+│   └── outputs/
+│       ├── figures/
+│       ├── tables/
+│       └── models/
+│
+├── notebooks/
+│   ├── 00_file_registry.ipynb
+│   ├── 01_ageing_timeseries_eda.ipynb
+│   ├── 02_polarization_eda.ipynb
+│   ├── 03_eis_eda.ipynb
+│   ├── 04_feature_engineering.ipynb
+│   ├── 05_target_creation_rul.ipynb
+│   ├── 06_baseline_models.ipynb
+│   ├── 07_classical_ml_models.ipynb
+│   ├── 08_lstm_gru_models.ipynb
+│   ├── 09_tcn_transformer_models.ipynb
+│   ├── 10_eis_fusion_model.ipynb
+│   ├── 11_temporal_diffusion.ipynb
+│   └── 12_final_results_figures.ipynb
+│
+├── src/
+│   ├── config.py
+│   ├── data_loader.py
+│   ├── file_registry.py
+│   ├── preprocessing.py
+│   ├── feature_engineering.py
+│   ├── target_creation.py
+│   ├── plotting.py
+│   ├── evaluation.py
+│   ├── models_ml.py
+│   ├── models_deep.py
+│   ├── models_fusion.py
+│   └── models_diffusion.py
+│
+├── requirements.txt
+└── README.md
+```
 
-## Name
-Choose a self-explaining name for your project.
+---
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Workflow
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+The project is organized as a step-by-step pipeline.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```mermaid
+flowchart TD
+    A[Raw IEEE PHM 2014 Data] --> B[File Registry]
+    B --> C[Data Loading]
+
+    C --> D1[Ageing Time-Series EDA]
+    C --> D2[Polarization EDA]
+    C --> D3[EIS EDA]
+
+    D1 --> E[Feature Engineering]
+    D2 --> E
+    D3 --> E
+
+    E --> F[Target Creation]
+
+    F --> G1[Baseline and Classical ML]
+    F --> G2[Deep Temporal Models]
+    F --> G3[EIS-Calibrated Fusion Model]
+    F --> G4[Temporal Diffusion Model]
+
+    G1 --> H[Evaluation]
+    G2 --> H
+    G3 --> H
+    G4 --> H
+
+    H --> I[Final Results and Figures]
+```
+
+---
+
+## Project Stages
+
+| Stage | Notebook                          | Purpose                                                                    |
+| ----- | --------------------------------- | -------------------------------------------------------------------------- |
+| 1     | `00_file_registry.ipynb`          | Scan all files and create a structured file registry                       |
+| 2     | `01_ageing_timeseries_eda.ipynb`  | Explore voltage, current, temperature, pressure, flow, and humidity trends |
+| 3     | `02_polarization_eda.ipynb`       | Analyze polarization curves and calculate power loss                       |
+| 4     | `03_eis_eda.ipynb`                | Plot Nyquist curves and extract EIS health indicators                      |
+| 5     | `04_feature_engineering.ipynb`    | Create ageing, polarization, and EIS features                              |
+| 6     | `05_target_creation_rul.ipynb`    | Create SoH, power-loss, voltage, and RUL targets                           |
+| 7     | `06_baseline_models.ipynb`        | Train simple baseline models                                               |
+| 8     | `07_classical_ml_models.ipynb`    | Train Random Forest, XGBoost, SVR, Gaussian Process, and related models    |
+| 9     | `08_lstm_gru_models.ipynb`        | Train LSTM and GRU models                                                  |
+| 10    | `09_tcn_transformer_models.ipynb` | Train TCN and Transformer models                                           |
+| 11    | `10_eis_fusion_model.ipynb`       | Combine ageing, EIS, and polarization features                             |
+| 12    | `11_temporal_diffusion.ipynb`     | Generate future degradation trajectories with uncertainty                  |
+| 13    | `12_final_results_figures.ipynb`  | Create final result tables and figures                                     |
+
+---
+
+## Feature Engineering
+
+The feature table is built by combining information from all available data sources.
+
+### Ageing Time-Series Features
+
+Examples:
+
+* stack voltage trend
+* individual cell voltage trends
+* voltage drop
+* cell imbalance
+* rolling voltage variation
+* current stability
+* temperature statistics
+* pressure statistics
+* flow statistics
+* humidity statistics
+
+### Polarization Features
+
+Examples:
+
+* voltage at fixed current density
+* power at fixed current density
+* maximum power
+* power loss
+* power-based SoH
+
+### EIS Features
+
+Examples:
+
+* high-frequency resistance
+* low-frequency impedance
+* Nyquist arc width
+* Nyquist arc area
+* maximum negative imaginary impedance
+* impedance at selected frequencies
+* PCA-based EIS features
+
+---
+
+## Prediction Targets
+
+The project creates several targets for supervised learning.
+
+| Target         | Meaning                                                 |
+| -------------- | ------------------------------------------------------- |
+| Future voltage | Voltage at a future ageing time                         |
+| Voltage drop   | Reduction in voltage over time                          |
+| Power loss     | Loss of power relative to the initial state             |
+| SoH            | Health state based on power, voltage, or EIS indicators |
+| RUL            | Remaining time before a power-loss threshold is reached |
+
+---
+
+## Models
+
+The project compares three levels of modelling.
+
+### 1. Classical Machine Learning
+
+Used as interpretable baselines.
+
+Models include:
+
+* Linear Regression
+* Random Forest
+* XGBoost
+* LightGBM
+* Support Vector Regression
+* Gaussian Process Regression
+
+---
+
+### 2. Deep Temporal Models
+
+Used to learn degradation patterns from ageing sequences.
+
+Models include:
+
+* RNN
+* LSTM
+* GRU
+* Temporal Convolutional Network
+* Transformer
+
+---
+
+### 3. EIS-Calibrated Fusion Model
+
+This is the main modelling direction of the project.
+
+The model combines:
+
+```text
+ageing time-series sequence
++ EIS health features
++ polarization performance features
+```
+
+and predicts:
+
+```text
+future voltage
+power loss
+State of Health
+Remaining Useful Life
+```
+
+```mermaid
+flowchart TD
+    A[Ageing Sequence] --> B[GRU / TCN Encoder]
+    B --> C[Temporal Embedding]
+
+    D[EIS Features] --> E[MLP Encoder]
+    E --> F[EIS Embedding]
+
+    G[Polarization Features] --> H[MLP Encoder]
+    H --> I[Performance Embedding]
+
+    C --> J[Feature Fusion]
+    F --> J
+    I --> J
+
+    J --> K[Prediction Heads]
+    K --> L1[Voltage]
+    K --> L2[Power Loss]
+    K --> L3[SoH]
+    K --> L4[RUL]
+```
+
+---
+
+### 4. Temporal Diffusion Model
+
+The temporal diffusion model is used for uncertainty-aware forecasting.
+
+Instead of predicting only one future degradation curve, it generates many possible future trajectories.
+
+This allows estimation of:
+
+* average future degradation,
+* uncertainty band,
+* RUL distribution,
+* probability of crossing a failure threshold.
+
+---
+
+## Model Comparison
+
+To understand the value of each data source, the project compares different feature combinations.
+
+| Experiment | Input Features                  |
+| ---------- | ------------------------------- |
+| A          | Voltage only                    |
+| B          | Voltage + operating variables   |
+| C          | Voltage + EIS features          |
+| D          | Voltage + polarization features |
+| E          | Voltage + EIS + polarization    |
+
+This directly tests whether EIS and polarization information improve prediction compared with ageing time-series data alone.
+
+---
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Create a virtual environment.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Windows
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```bash
+python -m venv pemfc_venv
+pemfc_venv\Scripts\activate
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Linux / macOS
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```bash
+python -m venv pemfc_venv
+source pemfc_venv/bin/activate
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Install dependencies:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```bash
+pip install -r requirements.txt
+```
 
-## License
-For open source projects, say how it is licensed.
+If `requirements.txt` is still empty, install the base packages:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```bash
+pip install numpy pandas matplotlib scipy scikit-learn jupyter openpyxl pyarrow
+```
+
+Optional packages:
+
+```bash
+pip install xgboost lightgbm
+pip install torch torchvision torchaudio
+```
+
+---
+
+## How to Run
+
+Start Jupyter:
+
+```bash
+jupyter notebook
+```
+
+Run notebooks in numerical order:
+
+```text
+00_file_registry.ipynb
+01_ageing_timeseries_eda.ipynb
+02_polarization_eda.ipynb
+03_eis_eda.ipynb
+04_feature_engineering.ipynb
+05_target_creation_rul.ipynb
+06_baseline_models.ipynb
+07_classical_ml_models.ipynb
+08_lstm_gru_models.ipynb
+09_tcn_transformer_models.ipynb
+10_eis_fusion_model.ipynb
+11_temporal_diffusion.ipynb
+12_final_results_figures.ipynb
+```
+
+Each notebook uses outputs from previous stages.
+
+---
+
+## Expected Outputs
+
+### Processed Data
+
+```text
+data/processed/file_registry.csv
+data/processed/ageing/
+data/processed/eis/
+data/processed/polarization/
+data/processed/features/
+```
+
+### Tables
+
+```text
+data/outputs/tables/ml_model_results.csv
+data/outputs/tables/deep_model_results.csv
+data/outputs/tables/fusion_model_results.csv
+data/outputs/tables/ablation_results.csv
+```
+
+### Figures
+
+```text
+data/outputs/figures/ageing_voltage_plot.png
+data/outputs/figures/cell_imbalance_plot.png
+data/outputs/figures/polarization_curves_over_ageing.png
+data/outputs/figures/power_loss_over_time.png
+data/outputs/figures/nyquist_over_ageing.png
+data/outputs/figures/eis_feature_trends.png
+data/outputs/figures/model_predictions.png
+data/outputs/figures/uncertainty_band.png
+data/outputs/figures/rul_distribution.png
+```
+
+### Models
+
+```text
+data/outputs/models/
+```
+
+---
+
+## Evaluation
+
+Regression models are evaluated using:
+
+| Metric    | Purpose                           |
+| --------- | --------------------------------- |
+| MAE       | Average absolute error            |
+| RMSE      | Penalizes larger errors           |
+| R²        | Explained variance                |
+| MAPE      | Relative percentage error         |
+| RUL error | Error in predicted remaining life |
+
+Uncertainty-aware models are evaluated using:
+
+| Metric                       | Purpose                                                  |
+| ---------------------------- | -------------------------------------------------------- |
+| Prediction interval coverage | Checks whether true values fall inside uncertainty bands |
+| Prediction interval width    | Measures sharpness of uncertainty estimates              |
+| RUL distribution error       | Evaluates predicted lifetime distribution                |
+
+---
+
+## Minimum Working Version
+
+The first complete version should include:
+
+1. file registry,
+2. ageing time-series EDA,
+3. polarization EDA,
+4. EIS EDA,
+5. feature engineering,
+6. target creation,
+7. classical ML models,
+8. one deep temporal model such as GRU or TCN.
+
+---
+
+## Advanced Version
+
+The advanced version adds:
+
+1. EIS-calibrated fusion model,
+2. multi-task prediction,
+3. temporal diffusion,
+4. uncertainty-aware degradation trajectories,
+5. RUL distributions.
+
+---
+
+## Data Availability
+
+This project is designed around the IEEE PHM 2014 Fuel Cell Data Challenge dataset.
+
+Raw data is expected to be placed under:
+
+```text
+data/raw/
+```
+
+Large raw datasets, processed datasets, trained models, and experiment outputs are not necessarily tracked in Git.
+
+Recommended to track:
+
+```text
+README.md
+requirements.txt
+src/
+notebooks/
+small sample data if allowed
+```
+
+Recommended to ignore:
+
+```text
+data/raw/
+data/processed/
+data/outputs/models/
+large CSV or Excel files
+model checkpoints
+virtual environments
+secrets or tokens
+```
+
+---
+
+## Summary
+
+This repository builds an EIS-calibrated deep temporal prognostics pipeline for PEM fuel cell degradation. It starts from raw ageing, polarization, and EIS data, creates SoH and RUL targets, compares classical and deep learning models, and extends the workflow toward fusion modelling and uncertainty-aware temporal diffusion.
