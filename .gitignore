@@ -1,0 +1,190 @@
+```gitignore
+# ============================================================
+# Python / Data Science / Machine Learning .gitignore
+# Project: PEMFC Prognostics
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Python cache / compiled files
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+
+# ------------------------------------------------------------
+# Virtual environments
+# ------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+pemfc_venv/
+
+
+# ------------------------------------------------------------
+# Environment variables / secrets
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+secrets.json
+config.local.json
+*.pem
+*.key
+
+
+# ------------------------------------------------------------
+# Jupyter Notebook
+# ------------------------------------------------------------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+
+# ------------------------------------------------------------
+# IDE / editor files
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+# ------------------------------------------------------------
+# OS files
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+*.log
+logs/
+
+
+# ------------------------------------------------------------
+# Python packaging / build files
+# ------------------------------------------------------------
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+
+# ------------------------------------------------------------
+# Testing / coverage
+# ------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+
+# ------------------------------------------------------------
+# Type checking / linting cache
+# ------------------------------------------------------------
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+
+
+# ------------------------------------------------------------
+# Data folders
+# Keep folder structure, but ignore large/private datasets
+# ------------------------------------------------------------
+data/raw/
+data/interim/
+data/processed/
+data/external/
+
+# Keep documentation/placeholders inside data folders
+!data/**/README.md
+!data/**/.gitkeep
+
+
+# ------------------------------------------------------------
+# Large data files
+# ------------------------------------------------------------
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.h5
+*.hdf5
+*.parquet
+*.feather
+*.npy
+*.npz
+*.mat
+
+
+# Allow small example/sample data if needed
+!data/sample/
+!data/sample/**
+
+
+# ------------------------------------------------------------
+# Machine learning outputs / models / checkpoints
+# ------------------------------------------------------------
+models/
+checkpoints/
+outputs/
+runs/
+results/
+artifacts/
+
+*.pkl
+*.pickle
+*.joblib
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pb
+*.h5
+*.keras
+
+
+# ------------------------------------------------------------
+# Experiment tracking
+# ------------------------------------------------------------
+mlruns/
+wandb/
+lightning_logs/
+tensorboard/
+tb_logs/
+
+
+# ------------------------------------------------------------
+# Temporary files
+# ------------------------------------------------------------
+tmp/
+temp/
+.cache/
+*.tmp
+*.bak
+
+
+# ------------------------------------------------------------
+# Project-specific notes
+# ------------------------------------------------------------
+# Keep these tracked:
+# README.md
+# requirements.txt
+# src/
+# notebooks/
+#
+# Be careful:
+# Do not commit private datasets, large experiment outputs,
+# trained model binaries, passwords, API keys, or tokens.
+```
